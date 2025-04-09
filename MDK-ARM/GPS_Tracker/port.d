@@ -1,0 +1,12 @@
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/port.c
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+gps_tracker\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+gps_tracker\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+gps_tracker\port.o: ../Core/Inc/FreeRTOSConfig.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/portmacro.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+gps_tracker\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h

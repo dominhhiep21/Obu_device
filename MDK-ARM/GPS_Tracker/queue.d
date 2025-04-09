@@ -1,0 +1,15 @@
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/queue.c
+gps_tracker\queue.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+gps_tracker\queue.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+gps_tracker\queue.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+gps_tracker\queue.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+gps_tracker\queue.o: ../Core/Inc/FreeRTOSConfig.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/portmacro.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+gps_tracker\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
