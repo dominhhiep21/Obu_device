@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -70,9 +70,9 @@ static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART1_UART_Init(void);
-void StartGPSTask(void const * argument);
-void StartMQTTTask(void const * argument);
-void StartOLEDTask(void const * argument);
+void StartGPSTask(void const *argument);
+void StartMQTTTask(void const *argument);
+void StartOLEDTask(void const *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -89,17 +89,18 @@ char buff[128];
 volatile char latestNMEABuffer[NMEA_LINE_MAX_LEN] = {0};
 Location GPS;
 
-void mPrint(const char* format,...){
-	va_list args;
-	va_start(args, format);
-	vsnprintf(buff, sizeof(buff), format, args);
-	va_end(args);
-	HAL_UART_Transmit(&huart1, (uint8_t*)buff, strlen(buff), 1000);
+void mPrint(const char *format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  vsnprintf(buff, sizeof(buff), format, args);
+  va_end(args);
+  HAL_UART_Transmit(&huart1, (uint8_t *)buff, strlen(buff), 1000);
 }
 
-void updateOLED(float lat, float lon) 
+void updateOLED(float lat, float lon)
 {
-	char bufferLat[15], bufferLon[15];
+  char bufferLat[15], bufferLon[15];
   sprintf(bufferLat, "Lat: %.6f", lat);
   sprintf(bufferLon, "Lon: %.6f", lon);
 
@@ -113,82 +114,80 @@ void updateOLED(float lat, float lon)
 
 void cleanBuffer(char *buffer)
 {
-    char tempBuffer[128];
-    int j = 0;
-    int dollar_found = 0;
+  char tempBuffer[128];
+  int j = 0;
+  int dollar_found = 0;
 
-    for (int i = 0; buffer[i] != '\0'; i++)
+  for (int i = 0; buffer[i] != '\0'; i++)
+  {
+    if (buffer[i] == '\r' || buffer[i] == '\n' || buffer[i] == ' ')
+      continue;
+    if (buffer[i] == '$')
     {
-        if (buffer[i] == '\r' || buffer[i] == '\n' || buffer[i] == ' ')
-            continue;
-        if (buffer[i] == '$')
-        {
-            if (!dollar_found)
-            {
-                tempBuffer[j++] = buffer[i];
-                dollar_found = 1;
-            }
-            continue;
-        }
-
+      if (!dollar_found)
+      {
         tempBuffer[j++] = buffer[i];
+        dollar_found = 1;
+      }
+      continue;
     }
 
-    tempBuffer[j] = '\0';
-    strcpy(buffer, tempBuffer);
+    tempBuffer[j++] = buffer[i];
+  }
+
+  tempBuffer[j] = '\0';
+  strcpy(buffer, tempBuffer);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART2)
+  if (huart->Instance == USART2)
+  {
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
+    if (rxIndex < sizeof(rxBuffer) - 1)
     {
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+      if (rxData != '\n')
+      {
+        rxBuffer[rxIndex++] = rxData;
+      }
+      else
+      {
+        rxBuffer[rxIndex] = '\0';
+        cleanBuffer((char *)rxBuffer);
 
-        if (rxIndex < sizeof(rxBuffer) - 1)
+        if (gps_Validate((char *)rxBuffer))
         {
-            if (rxData != '\n')
-            {
-                rxBuffer[rxIndex++] = rxData;
-            }
-            else
-            {
-                rxBuffer[rxIndex] = '\0';
-                cleanBuffer((char*)rxBuffer);
+          strncpy((char *)latestNMEABuffer, (char *)rxBuffer, NMEA_LINE_MAX_LEN - 1);
+          latestNMEABuffer[NMEA_LINE_MAX_LEN - 1] = '\0';
+          gpsDataReady = true;
 
-                if (gps_Validate((char*)rxBuffer))
-                {
-                    strncpy((char*)latestNMEABuffer, (char*)rxBuffer, NMEA_LINE_MAX_LEN - 1);
-                    latestNMEABuffer[NMEA_LINE_MAX_LEN - 1] = '\0'; 
-                    gpsDataReady = true;
-
-                    // G?i tín hi?u cho task GPS
-                    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-                    vTaskNotifyGiveFromISR(taskGPSHandle, &xHigherPriorityTaskWoken);
-                    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-                }
-
-                rxIndex = 0;
-                memset(rxBuffer, 0, sizeof(rxBuffer));
-            }
-        }
-        else
-        {
-            rxIndex = 0;
-            memset(rxBuffer, 0, sizeof(rxBuffer));
+          // G?i tín hi?u cho task GPS
+          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+          vTaskNotifyGiveFromISR(taskGPSHandle, &xHigherPriorityTaskWoken);
+          portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
 
-        HAL_UART_Receive_IT(&huart2, &rxData, 1);
+        rxIndex = 0;
+        memset(rxBuffer, 0, sizeof(rxBuffer));
+      }
     }
+    else
+    {
+      rxIndex = 0;
+      memset(rxBuffer, 0, sizeof(rxBuffer));
+    }
+
+    HAL_UART_Receive_IT(&huart2, &rxData, 1);
+  }
 }
-
-
 
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -219,9 +218,10 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-	HAL_UART_Receive_IT(&huart2,&rxData,1);
-	SSD1306_Init();
-	//initMQTT(device_id);
+  HAL_UART_Receive_IT(&huart2, &rxData, 1);
+  SSD1306_Init();
+  // initMQTT();
+  // initMQTT(device_id);
   /* USER CODE END 2 */
 
   /* Create the mutex(es) */
@@ -279,17 +279,17 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -300,9 +300,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -315,10 +314,10 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief I2C1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_I2C1_Init(void)
 {
 
@@ -345,14 +344,13 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
-
 }
 
 /**
-  * @brief USART1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_USART1_UART_Init(void)
 {
 
@@ -378,14 +376,13 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
-
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -411,14 +408,13 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART3 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_USART3_UART_Init(void)
 {
 
@@ -444,19 +440,18 @@ static void MX_USART3_UART_Init(void)
   /* USER CODE BEGIN USART3_Init 2 */
 
   /* USER CODE END USART3_Init 2 */
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -474,8 +469,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -484,143 +479,152 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN Header_StartGPSTask */
 /**
-  * @brief  Function implementing the taskGPS thread.
-  * @param  argument: Not used
-  * @retval None
-  */
+ * @brief  Function implementing the taskGPS thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartGPSTask */
-void StartGPSTask(void const * argument)
+void StartGPSTask(void const *argument)
 {
   /* USER CODE BEGIN 5 */
-	Location local = {0};       
-  Location lastGPS = {0};  
+  Location local = {0};
+  Location lastGPS = {0};
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        //mPrint("GPS Task: Notified by ISR\n");
+    // mPrint("GPS Task: Notified by ISR\n");
 
-        //mPrint("GPS Task: Waiting for mutex...\n");
-        if (osMutexWait(myMutexHandle, osWaitForever) == osOK)
+    // mPrint("GPS Task: Waiting for mutex...\n");
+    if (osMutexWait(myMutexHandle, osWaitForever) == osOK)
+    {
+      // mPrint("GPS Task: Got mutex\n");
+
+      if (gpsDataReady)
+      {
+        char tempLine[NMEA_LINE_MAX_LEN];
+        strncpy(tempLine, (char *)latestNMEABuffer, NMEA_LINE_MAX_LEN - 1);
+        tempLine[NMEA_LINE_MAX_LEN - 1] = '\0';
+        gpsDataReady = false;
+
+        if (gpsParse(tempLine, &local))
         {
-            //mPrint("GPS Task: Got mutex\n");
+          // mPrint("GPS Task: Parse success\n");
+          // mPrint(tempLine);
 
-            if (gpsDataReady)
-            {
-                char tempLine[NMEA_LINE_MAX_LEN];
-                strncpy(tempLine, (char*)latestNMEABuffer, NMEA_LINE_MAX_LEN - 1);
-                tempLine[NMEA_LINE_MAX_LEN - 1] = '\0'; 
-                gpsDataReady = false;
+          if (local.decimalLat != lastGPS.decimalLat || local.decimalLong != lastGPS.decimalLong)
+          {
+            GPS = local;
+            lastGPS = local;
 
-                if (gpsParse(tempLine, &local))
-                {
-                    //mPrint("GPS Task: Parse success\n");
-                    //mPrint(tempLine);
+            vTaskResume(taskOLEDHandle);
+            // mPrint("GPS Task: Resumed OLED task due to GPS change\n");
 
-                    if (local.decimalLat != lastGPS.decimalLat || local.decimalLong != lastGPS.decimalLong)
-                    {
-                        GPS = local;
-                        lastGPS = local;
-												
-                        vTaskResume(taskOLEDHandle);
-                        //mPrint("GPS Task: Resumed OLED task due to GPS change\n");
-
-                        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-                    }
-                }
-                else
-                {
-                    //mPrint("GPS Task: Parse failed\n");
-                }
-
-                osMutexRelease(myMutexHandle);
-                //mPrint("GPS Task: Released mutex after processing GPS data\n");
-            }
-            else
-            {
-                osMutexRelease(myMutexHandle);
-                //mPrint("GPS Task: No data ready, mutex released\n");
-            }
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+          }
         }
         else
         {
-            //mPrint("GPS Task: Failed to get mutex!\n");
+          // mPrint("GPS Task: Parse failed\n");
         }
-				UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-				mPrint("GPS Task stack watermark: %lu words (%lu bytes)\n", watermark, watermark * 4);
-        osDelay(100);
+
+        osMutexRelease(myMutexHandle);
+        // mPrint("GPS Task: Released mutex after processing GPS data\n");
+      }
+      else
+      {
+        osMutexRelease(myMutexHandle);
+        // mPrint("GPS Task: No data ready, mutex released\n");
+      }
+    }
+    else
+    {
+      // mPrint("GPS Task: Failed to get mutex!\n");
+    }
+    UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+    mPrint("GPS Task stack watermark: %lu words (%lu bytes)\n", watermark, watermark * 4);
+    osDelay(100);
   }
   /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_StartMQTTTask */
 /**
-* @brief Function implementing the taskMQTT thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the taskMQTT thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartMQTTTask */
-void StartMQTTTask(void const * argument)
+void StartMQTTTask(void const *argument)
 {
   /* USER CODE BEGIN StartMQTTTask */
-	Location local;
+  Location lastGPS = {0};
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
-		//mPrint("MQTT Task: Waiting for mutex...\n");
+    // mPrint("MQTT Task: Waiting for mutex...\n");
     osMutexWait(myMutexHandle, osWaitForever);
-		//mPrint("MQTT Task: Got mutex\n");
-		local = GPS;
-		mqttPublish(device_id, local.decimalLat, local.decimalLong);
-		osMutexRelease(myMutexHandle);
-		//mPrint("MQTT Task: Released mutex after processing GPS data\n");
-		UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-		mPrint("MQTT Task stack watermark: %lu words (%lu bytes)\n", watermark, watermark * 4);
-		osDelay(pdMS_TO_TICKS(3000));
+    // mPrint("MQTT Task: Got mutex\n");
+    if ((GPS.decimalLat != lastGPS.decimalLat || GPS.decimalLong != lastGPS.decimalLong) && GPS.decimalLat != 0.0 && GPS.decimalLong != 0.0)
+    {
+      lastGPS = GPS;
+      mPrint("GPS khac nhau");
+      mqttPublish(device_id, GPS.decimalLat, GPS.decimalLong);
+    }
+    else
+    {
+      mPrint("GPS giong nhau");
+    }
+    osMutexRelease(myMutexHandle);
+    // mPrint("MQTT Task: Released mutex after processing GPS data\n");
+    UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+    mPrint("MQTT Task stack watermark: %lu words (%lu bytes)\n", watermark, watermark * 4);
+    osDelay(pdMS_TO_TICKS(3000));
   }
   /* USER CODE END StartMQTTTask */
 }
 
 /* USER CODE BEGIN Header_StartOLEDTask */
 /**
-* @brief Function implementing the taskOLED thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the taskOLED thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartOLEDTask */
-void StartOLEDTask(void const * argument)
+void StartOLEDTask(void const *argument)
 {
   /* USER CODE BEGIN StartOLEDTask */
-	Location local;
+  Location local;
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
-		osMutexWait(myMutexHandle, osWaitForever);
-		local = GPS;
-		updateOLED(local.decimalLat,local.decimalLong);
-		osMutexRelease(myMutexHandle);
-		UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-		mPrint("OLED Task stack watermark: %lu words (%lu bytes)\n", watermark, watermark * 4);
+    osMutexWait(myMutexHandle, osWaitForever);
+    local = GPS;
+    updateOLED(local.decimalLat, local.decimalLong);
+    osMutexRelease(myMutexHandle);
+    UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+    mPrint("OLED Task stack watermark: %lu words (%lu bytes)\n", watermark, watermark * 4);
     vTaskSuspend(NULL);
   }
   /* USER CODE END StartOLEDTask */
 }
 
 /**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM1 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM1 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM1) {
+  if (htim->Instance == TIM1)
+  {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
@@ -629,9 +633,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -643,14 +647,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */

@@ -25,7 +25,7 @@ extern char charData[100];
 //extern char buff[128];
 
 void SIMTransmit(char *cmd);
-//void reconnectMQTT(const char *device_id);
+//void initMQTT();
 //void mPrint1(const char* format,...);
 void mqttPublish(const char *device_id, float lat, float lon);
 

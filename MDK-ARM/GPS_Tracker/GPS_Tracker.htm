@@ -3,7 +3,7 @@
 <title>Static Call Graph - [GPS_Tracker\GPS_Tracker.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image GPS_Tracker\GPS_Tracker.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Wed Apr 09 11:32:58 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Thu Apr 10 16:22:37 2025
 <BR><P>
 <H3>Maximum Stack Usage =        732 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -702,6 +702,7 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 4<LI>Call Chain = __aeabi_memclr4
 </UL>
 <BR>[Called By]<UL><LI><a href="#[11a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
+<LI><a href="#[47]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartMQTTTask
 <LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartGPSTask
 <LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_RxCpltCallback
 </UL>
@@ -1679,8 +1680,8 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.constdata)
 </UL>
-<P><STRONG><a name="[47]"></a>StartMQTTTask</STRONG> (Thumb, 70 bytes, Stack size 24 bytes, main.o(i.StartMQTTTask))
-<BR><BR>[Stack]<UL><LI>Max Depth = 208 + Unknown Stack Size
+<P><STRONG><a name="[47]"></a>StartMQTTTask</STRONG> (Thumb, 130 bytes, Stack size 24 bytes, main.o(i.StartMQTTTask))
+<BR><BR>[Stack]<UL><LI>Max Depth = 200 + Unknown Stack Size
 <LI>Call Chain = StartMQTTTask &rArr; mqttPublish &rArr; __2sprintf &rArr; _printf_char_common &rArr; __printf
 </UL>
 <BR>[Calls]<UL><LI><a href="#[113]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uxTaskGetStackHighWaterMark
@@ -1689,6 +1690,8 @@ Global Symbols
 <LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;osDelay
 <LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mPrint
 <LI><a href="#[116]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mqttPublish
+<LI><a href="#[110]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_cfcmpeq
+<LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr4
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy4
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.constdata)
@@ -1888,8 +1891,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[79]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__rt_entry_main
 </UL>
 
-<P><STRONG><a name="[116]"></a>mqttPublish</STRONG> (Thumb, 296 bytes, Stack size 48 bytes, uart_mqtt.o(i.mqttPublish))
-<BR><BR>[Stack]<UL><LI>Max Depth = 184 + Unknown Stack Size
+<P><STRONG><a name="[116]"></a>mqttPublish</STRONG> (Thumb, 294 bytes, Stack size 40 bytes, uart_mqtt.o(i.mqttPublish))
+<BR><BR>[Stack]<UL><LI>Max Depth = 176 + Unknown Stack Size
 <LI>Call Chain = mqttPublish &rArr; __2sprintf &rArr; _printf_char_common &rArr; __printf
 </UL>
 <BR>[Calls]<UL><LI><a href="#[c7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
@@ -2587,7 +2590,8 @@ Global Symbols
 <P><STRONG><a name="[110]"></a>__aeabi_cfcmpeq</STRONG> (Thumb, 0 bytes, Stack size 16 bytes, feqf.o(x$fpl$feqf))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = __aeabi_cfcmpeq
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartGPSTask
+<BR>[Called By]<UL><LI><a href="#[47]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartMQTTTask
+<LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartGPSTask
 </UL>
 
 <P><STRONG><a name="[17d]"></a>_fcmpeq</STRONG> (Thumb, 104 bytes, Stack size 16 bytes, feqf.o(x$fpl$feqf), UNUSED)
